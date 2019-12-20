@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 
+from matplotlib.patches import Patch
+
 from utils import oecd, chn, asia, afr, lam
 
 PLOT_KWARGS = {'lw': 3}
@@ -193,28 +195,60 @@ def plot_global_and_regions(_gases, save_kind):
     fig.savefig('global_and_regions_{}.png'.format(
         save_kind), bbox_inches='tight')
 
-
+def export_legend(legend, filename="legend.png", expand=[-5,-5,5,5]):
+    # taken from https://stackoverflow.com/a/47749903 (thanks!)
+    fig  = legend.figure
+    fig.canvas.draw()
+    bbox  = legend.get_window_extent()
+    bbox = bbox.from_extents(*(bbox.extents + np.array(expand)))
+    bbox = bbox.transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig(filename, dpi="figure", bbox_inches=bbox)
+    
 def make_legends():
     gas = gases[0]
     region = regions[0]
 
+    # 
+    # region plot
     fig, ax = plt.subplots()
     _legend = dict(loc='center left', bbox_to_anchor=(
         1.1, 0.5), prop={'size': 16})
     plot(wdf, gas, ax=ax, legend=copy.copy(_legend))
+
+    # make legend
     handles, labels = _unique_handles_lables(ax)
     labels = [l if 'SSP' not in l else l.split()[0] for l in labels]
-    ax.legend(handles, labels, **_legend)
+    idx = labels.index('RCPs Range')
+    handles[idx] =  Patch(
+        facecolor='darkgrey',
+        edgecolor='darkgrey',
+    )
+    legend = ax.legend(handles, labels, **_legend)
+
+    # save
+    export_legend(legend, 'global_legend_only.png')
     fig.savefig('global_legend.png', bbox_inches='tight')
 
+    #
+    # global plot
     fig, ax = plt.subplots()
     data = rdf.filter(variable='Emissions|' + gas, region=region)
     _legend = dict(loc='upper center', bbox_to_anchor=(
         0.5, -0.2), ncol=4, prop={'size': 16})
     plot(rdf.filter(region=region), gas=gas, ax=ax, legend=copy.copy(_legend))
+
+    # make legend
     handles, labels = _unique_handles_lables(ax)
     labels = [l if 'SSP' not in l else l.split()[0] for l in labels]
-    ax.legend(handles, labels, **_legend)
+    idx = labels.index('RCPs Range')
+    handles[idx] =  Patch(
+        facecolor='darkgrey',
+        edgecolor='darkgrey',
+    )
+    legend = ax.legend(handles, labels, **_legend)
+
+    # save
+    export_legend(legend, 'region_legend_only.png')
     fig.savefig('region_legend.png', bbox_inches='tight')
 
 
@@ -223,10 +257,10 @@ if __name__ == '__main__':
     # plot_region_only(with_ylims=True)
     make_legends()
 
-    _gases = ['Sulfur', 'BC', 'OC', 'NH3']
-    save_kind = '6_3_a'
-    plot_global_and_regions(_gases, save_kind)
+    # _gases = ['Sulfur', 'BC', 'OC', 'NH3']
+    # save_kind = '6_3_a'
+    # plot_global_and_regions(_gases, save_kind)
 
-    _gases = ['CH4', 'NOx', 'VOC', 'CO']
-    save_kind = '6_3_b'
-    plot_global_and_regions(_gases, save_kind)
+    # _gases = ['CH4', 'NOx', 'VOC', 'CO']
+    # save_kind = '6_3_b'
+    # plot_global_and_regions(_gases, save_kind)

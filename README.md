@@ -20,3 +20,4 @@ and Gidden et al. for CMIP6 data.
 
 - `v1.0`: plots are produced separately for global and regional values
 - `v2.0`: plots are produced with global and regional values together (separated now by different species)
+- `v2.1`: legends explicitly saved (not just in example plots)
