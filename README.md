@@ -15,3 +15,8 @@ and Gidden et al. for CMIP6 data.
 - `plotting.yaml` provides configuration for `pyam` plot properties
 - `plots.py` generates the plots themselves
 - `*.csv` is the data from which the plots are generated
+
+# Tags
+
+- `v1.0`: plots are produced separately for global and regional values
+- `v2.0`: plots are produced with global and regional values together (separated now by different species)
