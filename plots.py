@@ -85,19 +85,22 @@ def plot(df, gas, ax=None, legend=legend):
     return ax
 
 
+def _plot_global_only(df, gas, unit, ax, fontsize=16):
+    plot(df, gas, ax=ax, legend=False)
+    gas = rename[gas] if gas in rename else gas
+    ax.set_ylabel(unit, fontsize=fontsize)
+    ax.set_xlabel('')
+    ax.set_ylim([0, None])
+    ax.set_title(gas, fontsize=fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize)
+
+
 def plot_global_only():
     fig, axs = plt.subplots(3, 3, figsize=(5 * 3, 5 * 3))
     axs = np.ravel(axs)
-    fontsize = 16
 
     for i, (ax, gas) in enumerate(zip(axs, gases)):
-        plot(wdf, gas, ax=ax, legend=False)
-        gas = rename[gas] if gas in rename else gas
-        ax.set_ylabel(units[i], fontsize=fontsize)
-        ax.set_xlabel('')
-        ax.set_ylim([0, None])
-        ax.set_title(gas, fontsize=fontsize)
-        ax.tick_params(axis='both', which='major', labelsize=fontsize)
+        _plot_global_only(wdf, gas, units[i], ax)
 
     axs[-1].set_axis_off()
     fig.tight_layout()
@@ -112,7 +115,7 @@ def add_region_title(ax, region, **kwargs):
     ax.set_title(region, **kwargs)
 
 
-def _plot_region_only(df, region, gas, ax, with_ylims=False,
+def _plot_region_only(df, region, gas, ax, with_ylims=False, title=True, ylabel=True,
                       annotate=dict(
                           xy=(0.05, 0.85), xytext=(0.05, 0.85),
                           xycoords='axes fraction', textcoords='axes fraction'
@@ -121,7 +124,7 @@ def _plot_region_only(df, region, gas, ax, with_ylims=False,
     annotate = {**annotate, **dict(fontsize=fontsize)}
     i = gases.index(gas)
     plot(df.filter(region=region), gas=gas, legend=False, ax=ax)
-    if gas == gases[0]:
+    if title:
         add_region_title(ax, region, fontsize=fontsize * 1.1)
     else:
         ax.set_title('')
@@ -133,7 +136,7 @@ def _plot_region_only(df, region, gas, ax, with_ylims=False,
     else:
         ax.set_ylim([0, None])
     ax.set_xlabel('')
-    if region == regions[0]:
+    if region == regions[0] and ylabel:
         label = rename[gas] if gas in rename else gas
         ax.set_ylabel('{} ({})'.format(label, units[i]), fontsize=fontsize)
     else:
@@ -151,7 +154,9 @@ def plot_region_only(with_ylims=False):
 
     for i, (axs, gas) in enumerate(zip(_axs, gases)):
         for ax, region in zip(axs, regions):
-            _plot_region_only(rdf, region, gas, ax, with_ylims)
+            title = gas == gases[0]
+            _plot_region_only(rdf, region, gas, ax,
+                              with_ylims=with_ylims, title=title)
 
     fig.tight_layout()
     fig.savefig('region_only.png', bbox_inches='tight')
@@ -162,6 +167,31 @@ def _unique_handles_lables(ax):
     handles, labels = np.array(handles), np.array(labels)
     _, idx = np.unique(labels, return_index=True)
     return handles[idx], labels[idx]
+
+
+def plot_global_and_regions(_gases, save_kind):
+    n = len(_gases)
+    # TODO change 6 to 7 when new region introduced
+    nreg = 6
+    fig, _axs = plt.subplots(n, nreg, figsize=(5 * nreg, 5 * n))
+    fontsize = 20
+
+    for gas, axs in zip(_gases, _axs):
+        ax = axs[0]
+        unit = units[gases.index(gas)]
+        _plot_global_only(wdf, gas, unit, ax)
+        title = 'Global' if gas == _gases[0] else ''
+        ax.set_title(title, fontsize=1.1 * fontsize)
+        label = rename[gas] if gas in rename else gas
+        ax.set_ylabel('{} ({})'.format(label, unit), fontsize=fontsize)
+        ax.tick_params(axis='both', which='major', labelsize=fontsize)
+        for region, ax in zip(regions, axs[1:]):
+            title = gas == _gases[0]
+            _plot_region_only(
+                rdf, region, gas, ax, with_ylims=True, title=title, ylabel=False)
+            plt.tight_layout()
+    fig.savefig('global_and_regions_{}.png'.format(
+        save_kind), bbox_inches='tight')
 
 
 def make_legends():
@@ -189,6 +219,14 @@ def make_legends():
 
 
 if __name__ == '__main__':
-    plot_global_only()
-    plot_region_only(with_ylims=True)
+    # plot_global_only()
+    # plot_region_only(with_ylims=True)
     make_legends()
+
+    _gases = ['Sulfur', 'BC', 'OC', 'NH3']
+    save_kind = '6_3_a'
+    plot_global_and_regions(_gases, save_kind)
+
+    _gases = ['CH4', 'NOx', 'VOC', 'CO']
+    save_kind = '6_3_b'
+    plot_global_and_regions(_gases, save_kind)
