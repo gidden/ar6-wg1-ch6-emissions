@@ -257,10 +257,10 @@ if __name__ == '__main__':
     # plot_region_only(with_ylims=True)
     make_legends()
 
-    # _gases = ['Sulfur', 'BC', 'OC', 'NH3']
-    # save_kind = '6_3_a'
-    # plot_global_and_regions(_gases, save_kind)
+    _gases = ['Sulfur', 'BC', 'OC', 'NH3']
+    save_kind = '6_3_a'
+    plot_global_and_regions(_gases, save_kind)
 
-    # _gases = ['CH4', 'NOx', 'VOC', 'CO']
-    # save_kind = '6_3_b'
-    # plot_global_and_regions(_gases, save_kind)
+    _gases = ['CH4', 'NOx', 'VOC', 'CO']
+    save_kind = '6_3_b'
+    plot_global_and_regions(_gases, save_kind)

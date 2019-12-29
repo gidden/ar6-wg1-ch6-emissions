@@ -1,7 +1,7 @@
 # Requires
 
 - `pandas`
-- [`pyam v0.3.0`](https://pyam-iamc.readthedocs.io/) or greater
+- [`pyam>v0.3.0`](https://pyam-iamc.readthedocs.io/)
 
 # Data
 

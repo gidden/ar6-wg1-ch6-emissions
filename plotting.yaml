@@ -1,26 +1,17 @@
 
 color:
-  ssp:
-    History: black
-    CEDS: black
-    RCPs Range: black
-    SSP1: "#009E73"
-    SSP2: "#0072B2"
-    SSP3: "#FF0000"
-    SSP4: "#FF6600"
-    SSP5: "#CC0066"
   ssp-type:
-    SSP3-7.0: "#E00000"
-    SSP3-LowNTCF: "#E00000"
+    SSP3-7.0: "AR6-SSP3-7.0"
+    SSP3-LowNTCF: "AR6-SSP3-LowNTCF"
     History: black
-    SSP4-3.4: "#FFA900"
-    SSP4-6.0: "#C47900"
-    SSP1-1.9: "#00AAD0"
-    SSP1-2.6: "#003466"
-    SSP2-4.5: "#EF550F"
+    SSP4-3.4: "AR6-SSP4-3.4"
+    SSP4-6.0: "AR6-SSP4-6.0"
+    SSP1-1.9: "AR6-SSP1-1.9"
+    SSP1-2.6: "AR6-SSP1-2.6"
+    SSP2-4.5: "AR6-SSP2-4.5"
     RCPs Range: black
-    SSP5-3.4-OS: "#7F006E"
-    SSP5-8.5: "#990002"
+    SSP5-3.4-OS: "AR6-SSP5-3.4-OS"
+    SSP5-8.5: "AR6-SSP5-8.5"
 
 linestyle:
   type:
@@ -39,11 +30,6 @@ linestyle:
     '6.0': '-'
     '7.0': '-'
     '8.5': '-'
-
-order:
-  scenario:
-    - 'RCP'
-    - 'SSP'
   
 
 exec: 
