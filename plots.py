@@ -17,8 +17,25 @@ regions = [oecd, chn, asia, afr, lam]  # as specified by zig
 
 # gas order
 gases = ['CH4', 'BC', 'OC', 'Sulfur', 'NOx', 'CO', 'VOC', 'NH3']
-units = ['Tg CH4/yr', 'Tg C/yr', 'Tg C/yr', 'Tg SO2/yr', 'Tg NO2/yr',
-         'Tg CO/yr', 'Tg NMVOC/yr', 'Tg NH3/yr']
+
+units = [
+    r'Tg (CH$_4$) yr$^{-1}$',
+    r'Tg (C) yr$^{-1}$',
+    r'Tg (C) yr$^{-1}$',
+    r'Tg (SO$_2$) yr$^{-1}$',
+    r'Tg (NO$_2$) yr$^{-1}$',
+    r'Tg (CO) yr$^{-1}$',
+    r'Tg (NMVOC) yr$^{-1}$',
+    r'Tg (NH$_3$) yr$^{-1}$',
+]
+
+rename = {
+    'CH4': r'CH$_4$',
+    'NOx': r'NO$_x$',
+    'NH3': r'NH$_3$',
+    'Sulfur': r'SO$_2$',
+    'VOC': 'NMVOC'
+}
 
 # for region plots..
 ylims = [
@@ -38,11 +55,6 @@ rescale_ylim[('Sulfur', lam)] = 4
 for region in [chn, asia, afr]:
     rescale_ylim[('Sulfur', region)] = 2
 
-
-rename = {
-    'Sulfur': 'SO2',
-    'VOC': 'NMVOC'
-}
 
 #
 # world data
