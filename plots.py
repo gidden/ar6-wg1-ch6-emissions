@@ -6,18 +6,23 @@ import copy
 
 from matplotlib.patches import Patch
 
-from utils import oecd, chn, asia, afr, lam
+from utils import *
 
 PLOT_KWARGS = {'lw': 3}
 
 pyam.run_control().update('./plotting.yaml')
 legend = dict(loc='center left', bbox_to_anchor=(1.0, 0.5), prop={'size': 16})
 
-regions = [oecd, chn, asia, afr, lam]  # as specified by zig
+col = 'current-region-defs'
+col = 'NEW-AR6-Ch6-Fig6.4'
+regions = sorted(
+    pd.read_csv('country_mapping_ISO-5Regions.csv')
+    [col]
+    .unique()
+)
 
 # gas order
 gases = ['CH4', 'BC', 'OC', 'Sulfur', 'NOx', 'CO', 'VOC', 'NH3']
-
 units = [
     r'Tg (CH$_4$) yr$^{-1}$',
     r'Tg (C) yr$^{-1}$',
@@ -29,11 +34,18 @@ units = [
     r'Tg (NH$_3$) yr$^{-1}$',
 ]
 
+global_gases = ['HFC', 'CO2']
+global_units = [
+    r'Tg (CO$_2$-eq) yr$^{-1}$',
+    r'Pg (C) yr$^{-1}$',
+]
+
 rename = {
     'CH4': r'CH$_4$',
     'NOx': r'NO$_x$',
     'NH3': r'NH$_3$',
     'Sulfur': r'SO$_2$',
+    'CO2': r'CO$_2$',
     'VOC': 'NMVOC'
 }
 
@@ -49,22 +61,28 @@ ylims = [
     (0, 50),
 ]
 rescale_ylim = {}
-for gas in gases:
-    rescale_ylim[(gas, lam)] = 2
-rescale_ylim[('Sulfur', lam)] = 4
-for region in [chn, asia, afr]:
-    rescale_ylim[('Sulfur', region)] = 2
+# TODO revisit below
+# for gas in gases:
+#     rescale_ylim[(gas, r10lam)] = 2
+# rescale_ylim[('Sulfur', r10lam)] = 4
+# for region in [chn, asia, afr]:
+#     rescale_ylim[('Sulfur', region)] = 2
 
+
+# the following scenarios have been removed from consideration by WG1
+remove_ssps = ['SSP4-3.4-SPA4', 'SSP4-6.0-SPA4', 'SSP5-3.4-OS']
 
 #
 # world data
 #
 wdf = pyam.IamDataFrame('./ar6-wg1-ch6-emissions-global-data.csv')
+wdf = wdf.filter(scenario=remove_ssps, keep=False)
 
 #
 # regional data
 #
-rdf = pyam.IamDataFrame('./ar6-wg1-ch6-emissions-regional-data.csv')
+rdf = pyam.IamDataFrame('./ar6-wg1-ch6-emissions-regional-data-5regions.csv')
+rdf = rdf.filter(scenario=remove_ssps, keep=False)
 
 
 def plot(df, gas, ax=None, legend=legend):
@@ -86,13 +104,29 @@ def plot(df, gas, ax=None, legend=legend):
      )
 
     (df
+     .filter(model='History', scenario='EDGAR')
+     .line_plot(ax=ax, color='ssp-type', linestyle='type', legend=False, **PLOT_KWARGS)
+     )
+
+    (df
+     .filter(model='History', scenario='ECLIPSE_Ev5a')
+     .line_plot(ax=ax, color='ssp-type', linestyle='type', legend=False, **PLOT_KWARGS)
+     )
+
+    (df
      .filter(scenario='RCP*')
+     .line_plot(ax=ax, alpha=0.0, color='ssp-type', fill_between=True, legend=False, **PLOT_KWARGS)
+     )
+
+    (df
+     .filter(model='Ev5a')
      .line_plot(ax=ax, alpha=0.0, color='ssp-type', fill_between=True, legend=False, **PLOT_KWARGS)
      )
 
     (df
      .filter(model='History', keep=False)
      .filter(scenario='RCP*', keep=False)
+     .filter(model='Ev5a', keep=False)
      .line_plot(ax=ax, color='ssp-type', linestyle='type', legend=legend, **PLOT_KWARGS)
      )
 
@@ -104,19 +138,24 @@ def _plot_global_only(df, gas, unit, ax, fontsize=16):
     gas = rename[gas] if gas in rename else gas
     ax.set_ylabel(unit, fontsize=fontsize)
     ax.set_xlabel('')
-    ax.set_ylim([0, None])
+    if gas != 'CO2':
+        ax.set_ylim([0, None])
     ax.set_title(gas, fontsize=fontsize)
     ax.tick_params(axis='both', which='major', labelsize=fontsize)
 
 
 def plot_global_only():
-    fig, axs = plt.subplots(3, 3, figsize=(5 * 3, 5 * 3))
+    fig, axs = plt.subplots(3, 4, figsize=(5 * 4, 5 * 3))
     axs = np.ravel(axs)
 
-    for i, (ax, gas) in enumerate(zip(axs, gases)):
-        _plot_global_only(wdf, gas, units[i], ax)
+    _units = units + global_units
+    for i, (ax, gas) in enumerate(zip(axs, gases + global_gases)):
+        _plot_global_only(wdf, gas, _units[i], ax)
 
-    axs[-1].set_axis_off()
+    # turn off based on current gas set up
+    turn_off = [-1, -2]
+    for idx in turn_off:
+        axs[idx].set_axis_off()
     fig.tight_layout()
     fig.savefig('global_only.png', bbox_inches='tight')
 
@@ -152,7 +191,10 @@ def _plot_region_only(df, region, gas, ax, with_ylims=False, title=True, ylabel=
     ax.set_xlabel('')
     if region == regions[0] and ylabel:
         label = rename[gas] if gas in rename else gas
-        ax.set_ylabel('{} ({})'.format(label, units[i]), fontsize=fontsize)
+        ymin, ymax = ax.get_ylim()
+        ylev = (ymax - ymin) / 2
+        ax.text(1650, ylev, label, fontsize=fontsize * 1.5, rotation=0)
+        ax.set_ylabel('{}'.format(units[i]), fontsize=fontsize)
     else:
         ax.set_ylabel('')
     ax.tick_params(axis='both', which='major', labelsize=fontsize)
@@ -185,9 +227,7 @@ def _unique_handles_lables(ax):
 
 def plot_global_and_regions(_gases, save_kind):
     n = len(_gases)
-    # TODO change 6 to 7 when new region introduced
-    nreg = 6
-    fig, _axs = plt.subplots(n, nreg, figsize=(5 * nreg, 5 * n))
+    fig, _axs = plt.subplots(n, 7, figsize=(5 * 7, 5 * n))
     fontsize = 20
 
     for gas, axs in zip(_gases, _axs):
@@ -207,72 +247,59 @@ def plot_global_and_regions(_gases, save_kind):
     fig.savefig('global_and_regions_{}.png'.format(
         save_kind), bbox_inches='tight')
 
-def export_legend(legend, filename="legend.png", expand=[-5,-5,5,5]):
-    # taken from https://stackoverflow.com/a/47749903 (thanks!)
-    fig  = legend.figure
-    fig.canvas.draw()
-    bbox  = legend.get_window_extent()
-    bbox = bbox.from_extents(*(bbox.extents + np.array(expand)))
-    bbox = bbox.transformed(fig.dpi_scale_trans.inverted())
-    fig.savefig(filename, dpi="figure", bbox_inches=bbox)
-    
-def make_legends():
-    gas = gases[0]
+
+def make_global_legends(gas=None):
+    gas = gas or gases[0]
     region = regions[0]
 
-    # 
-    # region plot
     fig, ax = plt.subplots()
     _legend = dict(loc='center left', bbox_to_anchor=(
         1.1, 0.5), prop={'size': 16})
     plot(wdf, gas, ax=ax, legend=copy.copy(_legend))
-
-    # make legend
     handles, labels = _unique_handles_lables(ax)
     labels = [l if 'SSP' not in l else l.split()[0] for l in labels]
-    idx = labels.index('RCPs Range')
-    handles[idx] =  Patch(
-        facecolor='darkgrey',
-        edgecolor='darkgrey',
-    )
-    legend = ax.legend(handles, labels, **_legend)
 
-    # save
-    export_legend(legend, 'global_legend_only.png')
-    fig.savefig('global_legend.png', bbox_inches='tight')
+    custom = {
+        'RCPs Range': 'black',
+        'ECLIPSE_Ev5a Range': 'purple',
+    }
 
-    #
-    # global plot
+    for k, c in custom.items():
+        if k in labels:
+            p = Patch(facecolor=c, alpha=0.2)
+            handles[labels.index(k)] = p
+
+
+    ax.legend(handles, labels, **_legend)
+    fig.savefig(f'global_legend_{gas}.png', bbox_inches='tight')
+
+def make_region_legends(gas=None):
+    gas = gas or gases[0]
+    region = regions[0]
     fig, ax = plt.subplots()
     data = rdf.filter(variable='Emissions|' + gas, region=region)
     _legend = dict(loc='upper center', bbox_to_anchor=(
         0.5, -0.2), ncol=4, prop={'size': 16})
     plot(rdf.filter(region=region), gas=gas, ax=ax, legend=copy.copy(_legend))
-
-    # make legend
     handles, labels = _unique_handles_lables(ax)
     labels = [l if 'SSP' not in l else l.split()[0] for l in labels]
-    idx = labels.index('RCPs Range')
-    handles[idx] =  Patch(
-        facecolor='darkgrey',
-        edgecolor='darkgrey',
-    )
-    legend = ax.legend(handles, labels, **_legend)
-
-    # save
-    export_legend(legend, 'region_legend_only.png')
+    ax.legend(handles, labels, **_legend)
     fig.savefig('region_legend.png', bbox_inches='tight')
 
 
 if __name__ == '__main__':
-    # plot_global_only()
-    # plot_region_only(with_ylims=True)
-    make_legends()
+    make_global_legends('HFC')
+    make_global_legends('CH4')
+    plot_global_only()
+    #make_global_legends('CO2')
+    
+    plot_region_only(with_ylims=False)
+    # make_region_legends()
 
-    _gases = ['Sulfur', 'BC', 'OC', 'NH3']
-    save_kind = '6_3_a'
-    plot_global_and_regions(_gases, save_kind)
+    # _gases = ['Sulfur', 'BC', 'OC', 'NH3']
+    # save_kind = '6_3_a'
+    # plot_global_and_regions(_gases, save_kind)
 
-    _gases = ['CH4', 'NOx', 'VOC', 'CO']
-    save_kind = '6_3_b'
-    plot_global_and_regions(_gases, save_kind)
+    # _gases = ['CH4', 'NOx', 'VOC', 'CO']
+    # save_kind = '6_3_b'
+    # plot_global_and_regions(_gases, save_kind)

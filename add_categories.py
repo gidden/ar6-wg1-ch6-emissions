@@ -1,14 +1,26 @@
 
 
 def get_ssp(x):
-    x = x.scenario
-    if 'RCP' in x:
+    s = x.scenario
+    if 'RCP' in s:
         return 'RCPs Range'
-    return x.split('-')[0]
+    elif x.model == 'Ev5a':
+        return 'ECLIPSE_Ev5a Range'
+    elif x.model == 'History' or s == 'History':
+        return 'Historical'
+    return s.split('-')[0]
 
 
 def get_type(x):
-    if 'CMIP' in x.model:
+    models = [
+        'CMIP',
+        'CMIP5',
+        'CMIP6',
+        'EDGAR',
+        'ECLIPSE',
+        'Ev5a',
+    ]
+    if x.model in models:
         return x.model
     x = x.scenario
     if 'RCP' in x:
